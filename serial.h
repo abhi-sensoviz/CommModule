@@ -14,10 +14,11 @@ class Serial : public QObject{
 Q_OBJECT
 
 public:
-    Serial(QObject *parnt=nullptr);
-    void disconnectPort();
+    explicit Serial(QObject *parnt=nullptr);
+    void disconnectDevice();
     bool connectDevice(QString);
     bool sendData(QByteArray );
+    QByteArray data=QByteArray();
 signals:
     void dataRecived(QByteArray data);
 

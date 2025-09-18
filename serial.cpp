@@ -1,35 +1,41 @@
 #include "serial.h"
 
-Serial::Serial(QObject* parent){
+Serial::Serial(QObject* parent): QObject (parent){
 
 }
 
 //connect device
 bool Serial::connectDevice(QString portname){
 
-    if(port!=nullptr){
-        port->close();
-        delete port;
-    }
-    port=new QSerialPort(this);
+    try {
 
-    //configuring port read config from file if needed
-    port->setPortName(portname);
-    port->setBaudRate(QSerialPort::Baud9600);
-    port->setDataBits(QSerialPort::Data8);
-    port->setParity(QSerialPort::NoParity);
-    port->setStopBits(QSerialPort::OneStop);
+        if(port!=nullptr){
+            port->close();
+            delete port;
+        }
+        port=new QSerialPort(this);
 
-    //opean port
-    if(port->open(QIODevice::ReadWrite)){
-        cout<<"Port opened "<<portname.toStdString()<<endl;
-        connect(port,&QSerialPort::readyRead,this,&Serial::reciveData);
-        return true;
-    }else{
-        cerr<<"error in opening port"<<portname.toStdString()<<endl;
+        //configuring port read config from file if needed
+        port->setPortName(portname);
+        port->setBaudRate(QSerialPort::Baud9600);
+        port->setDataBits(QSerialPort::Data8);
+        port->setParity(QSerialPort::NoParity);
+        port->setStopBits(QSerialPort::OneStop);
+
+        //opean port
+        if(port->open(QIODevice::ReadWrite)){
+            cout<<"Port opened "<<portname.toStdString()<<endl;
+            connect(port,&QSerialPort::readyRead,this,&Serial::reciveData);
+            return true;
+        }else{
+            cerr<<"error in opening port "<<portname.toStdString()<<endl;
+        }
+    } catch (...) {
+        cerr<<"error in opening port "<<portname.toStdString()<<endl;
         return false;
-    }
 
+    }
+    return false;
 
 }
 
@@ -58,24 +64,29 @@ bool Serial::sendData(QByteArray data){
 
 
 //recive data
-void Serial::reciveData(){
-    if(port==nullptr){
-        cerr<<"cant read data port is null"<<endl;
-        return;
-    }if(port->isOpen()){
-        QByteArray data=port->readAll();
-        emit dataRecived(data);
-    }else{
-        cerr<<"cant get data"<<endl;
-        return;
+void Serial::reciveData(){  //modify to include prefix and suffix
+    try {
+    if(port->isOpen()){
+        data.append(port->readAll());
+//        /emit dataRecived(data); //comment out
+        //check if complete data is available and then emit
+        //clear after data is recived completly
+        //dummy condition
+        if(data.length()>3){
+            emit(dataRecived(data));
+            data.clear();
+            return;
+        }
     }
-
+    } catch (...) {
+        cerr<<"error in reading data"<<endl;
+    }
 
 }
 
 
 //disconnect port
-void Serial::disconnectPort(){
+void Serial::disconnectDevice(){
 
     if(port && port->isOpen()){
         port->close();

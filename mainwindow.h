@@ -7,6 +7,7 @@
 #include <iostream>
 #include <strings.h>
 #include "serial.h"
+#include "tcp.h"
 using namespace std;
 
 
@@ -22,8 +23,9 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     void loadPort();
-    array<string, 2> PortList = { "/dev/pts/2", "/dev/pts/3" };
+    array<string, 3> PortList = { "/dev/pts/2", "/dev/pts/3","127.0.0.0"};
     Serial *serial=nullptr;
+    Tcp *socket=nullptr;
 
 private slots:
     void on_btnSendData_clicked();
