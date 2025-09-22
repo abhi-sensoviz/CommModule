@@ -8,6 +8,7 @@
 #include <strings.h>
 #include "serial.h"
 #include "tcp.h"
+#include "plccomm.h"
 using namespace std;
 
 
@@ -26,6 +27,7 @@ public:
     array<string, 3> PortList = { "/dev/pts/2", "/dev/pts/3","127.0.0.0"};
     Serial *serial=nullptr;
     Tcp *socket=nullptr;
+    PlcComm *plc=nullptr;
 
 private slots:
     void on_btnSendData_clicked();

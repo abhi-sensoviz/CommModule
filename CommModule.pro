@@ -4,9 +4,11 @@
 #
 #-------------------------------------------------
 
-QT       += core gui serialport network
+QT       += core gui serialport network serialbus
+
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
 
 TARGET = CommModule
 TEMPLATE = app
@@ -28,11 +30,13 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
+        plccomm.cpp \
         serial.cpp \
         tcp.cpp
 
 HEADERS += \
         mainwindow.h \
+        plccomm.h \
         serial.h \
         tcp.h
 
