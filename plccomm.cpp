@@ -1,3 +1,4 @@
+
 #include "plccomm.h"
 
 PlcComm::PlcComm(QObject *parent) : QObject(parent)
@@ -96,35 +97,72 @@ bool PlcComm::connectDevice(TcpType type,
     return false;
 }
 
+
 bool PlcComm::connectDevice(ModbusType type,
-                            ModbusMode mode,
-                            int slaveId,
-                            int timeoutMs,
-                            int retries,
-                            const std::string &portName,
+                            ModbusRtu mode,
+                            const std::string &port,
                             BaudRate baud,
                             DataBits dataBits,
                             Parity parity,
                             StopBits stopBits,
-                            const std::string &ip,
-                            int tcpPort) {
+                            int slaveId,
+                            int timeoutMs,
+                            int retries) {
+
     try {
         disconnectDevice(); // Disconnect any existing connection first
         CurrentType = PlcComm::Type::MODBUS;
+        this->modbusSlaveId = slaveId; // Store the slave ID
 
-        if (mode == ModbusMode::RTU) {
-            if (portName.empty()) {
+        if (mode == ModbusRtu::RTU) {
+            if (port.empty()) {
                 qCritical() << "Modbus RTU requires a port name!";
                 return false;
             }
             auto modbusMaster = new QModbusRtuSerialMaster(this);
-            modbusMaster->setConnectionParameter(QModbusDevice::SerialPortNameParameter, QString::fromStdString(portName));
+            modbusMaster->setConnectionParameter(QModbusDevice::SerialPortNameParameter, QString::fromStdString(port));
             modbusMaster->setConnectionParameter(QModbusDevice::SerialParityParameter, static_cast<int>(parity));
             modbusMaster->setConnectionParameter(QModbusDevice::SerialBaudRateParameter, baud);
             modbusMaster->setConnectionParameter(QModbusDevice::SerialDataBitsParameter, static_cast<int>(dataBits));
             modbusMaster->setConnectionParameter(QModbusDevice::SerialStopBitsParameter, static_cast<int>(stopBits));
             modbusClient = modbusMaster;
-        } else if (mode == ModbusMode::TCP) {
+
+            modbusClient->setTimeout(timeoutMs);
+            modbusClient->setNumberOfRetries(retries);
+
+            if (!modbusClient->connectDevice()) {
+                qCritical() << "Failed to connect Modbus:" << modbusClient->errorString();
+                disconnectDevice(); // Clean up
+                return false;
+            }
+            qInfo()<<"Modbus RTU " << QString::fromStdString(port) <<" Connected Sucessfully";
+            return true;
+
+
+        }}catch(...){
+            qCritical() << "Exception in connectDevice(Modbus)";
+            return false;
+        }
+   return false;
+
+
+}
+
+
+
+bool PlcComm::connectDevice(ModbusType type,
+                            ModbusTcp mode,
+                            const std::string &ip,
+                            int tcpPort,
+                            int slaveId,
+                            int timeoutMs,
+                            int retries) {
+    try{
+        disconnectDevice(); // Disconnect any existing connection first
+        CurrentType = PlcComm::Type::MODBUS;
+        this->modbusSlaveId = slaveId; // Store the slave ID
+
+        if (mode == ModbusTcp::TCP) {
             if (ip.empty()) {
                 qCritical() << "Modbus TCP requires an IP address!";
                 return false;
@@ -133,8 +171,6 @@ bool PlcComm::connectDevice(ModbusType type,
             modbusMaster->setConnectionParameter(QModbusDevice::NetworkAddressParameter, QString::fromStdString(ip));
             modbusMaster->setConnectionParameter(QModbusDevice::NetworkPortParameter, tcpPort);
             modbusClient = modbusMaster;
-        } else {
-            return false; // Unknown mode
         }
 
         modbusClient->setTimeout(timeoutMs);
@@ -154,6 +190,8 @@ bool PlcComm::connectDevice(ModbusType type,
         return false;
     }
 }
+
+
 
 void PlcComm::disconnectDevice() {
     try {
@@ -208,7 +246,7 @@ void PlcComm::disconnectDevice() {
     }
 }
 
-void PlcComm::sendData(const QByteArray &data) {
+void PlcComm::sendData(const QByteArray &data,RegisterType registerType) {
     try {
         switch (CurrentType) {
         case Type::SERIAL:
@@ -242,11 +280,10 @@ void PlcComm::sendData(const QByteArray &data) {
                     qWarning() << "Modbus sendData: No data to send.";
                     return;
                 }
+                //change the register type here
+                QModbusDataUnit writeUnit(static_cast<QModbusDataUnit::RegisterType>(registerType), 0, registers);
 
-                QModbusDataUnit writeUnit(QModbusDataUnit::HoldingRegisters, 0, registers);
-                int slaveId = 1; // This should be a parameter or member variable
-
-                if (auto *reply = modbusClient->sendWriteRequest(writeUnit, slaveId)) {
+                if (auto *reply = modbusClient->sendWriteRequest(writeUnit, modbusSlaveId)) {
                     if (!reply->isFinished()) {
                         connect(reply, &QModbusReply::finished, this, [reply]() {
                             if (reply->error() != QModbusDevice::NoError) {
@@ -270,6 +307,50 @@ void PlcComm::sendData(const QByteArray &data) {
         }
     } catch (...) {
         qCritical() << "Exception in sendData()";
+    }
+}
+
+bool PlcComm::readModbusData(PlcComm::RegisterType registerType, int startAddress, int numberOfEntries, int slaveId) {
+    if (CurrentType != Type::MODBUS || !modbusClient || modbusClient->state() != QModbusDevice::ConnectedState) {
+        qWarning() << "Modbus client is not connected.";
+        return false;
+    }
+    // Convert your wrapper enum to Qt enum
+
+    // Create the Modbus data unit
+    QModbusDataUnit readUnit(static_cast<QModbusDataUnit::RegisterType>(registerType), startAddress, numberOfEntries);
+
+    int targetSlaveId = (slaveId > 0) ? slaveId : this->modbusSlaveId;
+
+    if (auto *reply = modbusClient->sendReadRequest(readUnit, targetSlaveId)) {
+        if (!reply->isFinished()) {
+            connect(reply, &QModbusReply::finished, this, [this, reply]() {
+                if (reply->error() == QModbusDevice::NoError) {
+                    const QModbusDataUnit unit = reply->result();
+                    QByteArray data;
+                    for (const quint16 val : unit.values()) {
+                        // Big-endian conversion
+                        data.append(static_cast<char>((val >> 8) & 0xFF));
+                        data.append(static_cast<char>(val & 0xFF));
+                    }
+                    qInfo() << "Modbus read successful. Data:" << data.toHex(':');
+                    emit dataRecived(data);// <-- EMIT THE SIGNAL
+                } else {
+                    qWarning() << "Modbus read error:" << reply->errorString();
+                }
+                reply->deleteLater();
+            });
+        } else {
+            // Handle immediate reply (e.g., error)
+            if (reply->error() != QModbusDevice::NoError) {
+                 qWarning() << "Modbus read error:" << reply->errorString();
+            }
+            delete reply;
+        }
+        return true;
+    } else {
+        qWarning() << "Modbus read request failed:" << modbusClient->errorString();
+        return false;
     }
 }
 
@@ -297,7 +378,7 @@ void PlcComm::reciveData() {
             break;
 
         case Type::MODBUS:
-             qWarning() << "reciveData() called for Modbus, but reads should be initiated explicitly.";
+             qWarning() << "reciveData() called for Modbus, but reads should be initiated explicitly via readModbusData().";
              break;
 
         case Type::NONE:
@@ -308,7 +389,6 @@ void PlcComm::reciveData() {
     }
 }
 
-
 void PlcComm::checkConnection() {
     cout << "Connected to TCP host." << endl;
 }
@@ -318,5 +398,4 @@ void PlcComm::errorConnection(QAbstractSocket::SocketError /*err*/) {
         cerr << "Cannot connect: " << socket->errorString().toStdString() << endl;
     }
 }
-
 

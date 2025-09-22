@@ -46,6 +46,16 @@ public:
     enum class TcpType { TCP };
     enum class ModbusType { MODBUS };
 
+    // TCP configuration enums
+    enum class TcpRole {
+        Client,
+        Server
+    };
+
+    // Modbus configuration enums
+    enum class ModbusTcp {TCP};
+    enum class ModbusRtu{RTU};
+
     // Serial port configuration enums (values match QSerialPort)
     enum BaudRate {
         Baud1200   = QSerialPort::Baud1200,
@@ -81,16 +91,12 @@ public:
         Software = QSerialPort::SoftwareControl
     };
 
-    // TCP configuration enums
-    enum class TcpRole {
-        Client,
-        Server
-    };
-
-    // Modbus configuration enums
-    enum class ModbusMode {
-        RTU,
-        TCP
+    enum class RegisterType {
+        Invalid         = 0,
+        DiscreteInputs  = QModbusDataUnit::DiscreteInputs,
+        Coils           = QModbusDataUnit::Coils,
+        InputRegisters  = QModbusDataUnit::InputRegisters,
+        HoldingRegisters= QModbusDataUnit::HoldingRegisters
     };
 
     // Overloaded connection methods with default parameters
@@ -111,23 +117,33 @@ public:
                        int reconnectMs = 0);
 
     bool connectDevice(ModbusType type,
-                       ModbusMode mode,
-                       int slaveId,
-                       int timeoutMs,
-                       int retries,
-                       // RTU params
-                       const std::string &portName = "",
+                       ModbusRtu mode,
+                       const std::string &portName="tmp/ttyv0",
                        BaudRate baud = Baud9600,
                        DataBits dataBits = DataBits::Data8,
                        Parity parity = Parity::None,
                        StopBits stopBits = StopBits::One,
-                       // TCP params
-                       const std::string &ip = "",
-                       int tcpPort = 502);
+                       int slaveId=1,
+                       int timeoutMs = 1000,
+                       int retries = 3);
+
+    // TCP
+    bool connectDevice(ModbusType type,
+                       ModbusTcp mode,
+                       const std::string &ip="127.0.0.0",
+                       int tcpPort = 8080,
+                       int slaveId=1,
+                       int timeoutMs = 1000,
+                       int retries = 3);
+
+
+
 
     // Public methods
     void disconnectDevice();
-    void sendData(const QByteArray &data);
+    void sendData(const QByteArray &data,RegisterType registerType=RegisterType::HoldingRegisters);
+
+    bool readModbusData(RegisterType registerType, int startAddress, int numberOfEntries, int slaveId = -1);
 
     // Public members
     QByteArray buffer;
@@ -147,6 +163,9 @@ private:
     QModbusClient *modbusClient = nullptr;
 
     Type CurrentType = Type::NONE;
+    int modbusSlaveId = 1;
+
+
 };
 
 #endif // PLCCOMM_H

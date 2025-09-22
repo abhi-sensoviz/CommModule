@@ -7,7 +7,11 @@
 QT       += core gui serialport network serialbus
 
 
+
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+
+
 
 
 TARGET = CommModule

@@ -38,6 +38,8 @@ private slots:
     void on_btnClose_clicked();
 
 
+    void on_btnReq_clicked();
+
 private:
     Ui::MainWindow *ui;
 };

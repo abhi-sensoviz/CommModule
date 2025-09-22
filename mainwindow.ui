@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>655</width>
+    <height>478</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,8 +20,8 @@
    <widget class="QPushButton" name="btnSendData">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>160</y>
+      <x>20</x>
+      <y>330</y>
       <width>89</width>
       <height>25</height>
      </rect>
@@ -33,8 +33,8 @@
    <widget class="QPushButton" name="btnOpenPort">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>90</y>
+      <x>30</x>
+      <y>80</y>
       <width>89</width>
       <height>25</height>
      </rect>
@@ -46,18 +46,18 @@
    <widget class="QTextBrowser" name="textBox">
     <property name="geometry">
      <rect>
-      <x>170</x>
+      <x>450</x>
       <y>10</y>
-      <width>211</width>
-      <height>211</height>
+      <width>191</width>
+      <height>411</height>
      </rect>
     </property>
    </widget>
    <widget class="QPushButton" name="btnClose">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>200</y>
+      <x>20</x>
+      <y>380</y>
       <width>89</width>
       <height>25</height>
      </rect>
@@ -69,8 +69,8 @@
    <widget class="QLineEdit" name="inputText">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>120</y>
+      <x>20</x>
+      <y>290</y>
       <width>151</width>
       <height>25</height>
      </rect>
@@ -79,8 +79,8 @@
    <widget class="QLineEdit" name="portname">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>60</y>
+      <x>30</x>
+      <y>50</y>
       <width>113</width>
       <height>25</height>
      </rect>
@@ -89,8 +89,8 @@
    <widget class="QComboBox" name="comboBox">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>10</y>
+      <x>30</x>
+      <y>20</y>
       <width>86</width>
       <height>25</height>
      </rect>
@@ -107,9 +107,27 @@
     </item>
     <item>
      <property name="text">
-      <string>Modbus</string>
+      <string>Modbus RTU</string>
      </property>
     </item>
+    <item>
+     <property name="text">
+      <string>Modbus TCP</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QPushButton" name="btnReq">
+    <property name="geometry">
+     <rect>
+      <x>140</x>
+      <y>380</y>
+      <width>89</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Modbus Req</string>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -117,7 +135,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>400</width>
+     <width>655</width>
      <height>22</height>
     </rect>
    </property>
