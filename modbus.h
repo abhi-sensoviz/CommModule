@@ -1,21 +1,19 @@
-#ifndef PLCCOMM_H
-#define PLCCOMM_H
+#ifndef MODBUS_H
+#define MODBUS_H
+
 
 // Qt Core
 #include <QObject>
 #include <QTimer>
 #include <QDebug>
-
-// Qt SerialPort
 #include <QSerialPort>
-
-// Qt Network
-#include <QTcpSocket>
 
 // Qt Modbus
 #include <QModbusClient>
 #include <QModbusRtuSerialMaster>
 #include <QModbusTcpClient>
+#include <QModbusReply>
+#include <QModbusDataUnit>
 
 // Standard Library
 #include <string>
@@ -26,31 +24,14 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
-class PlcComm : public QObject
+
+
+class Modbus : public QObject
 {
     Q_OBJECT
 public:
-    explicit PlcComm(QObject *parent = nullptr);
-    ~PlcComm();
-
-    // Communication type enums
-    enum class Type {
-        NONE, // Represents an inactive state
-        SERIAL,
-        TCP,
-        MODBUS
-    };
-
-    // Protocol-specific markers for function overloading
-    enum class SerialType { SERIAL };
-    enum class TcpType { TCP };
-    enum class ModbusType { MODBUS };
-
-    // TCP configuration enums
-    enum class TcpRole {
-        Client,
-        Server
-    };
+    explicit Modbus(QObject *parent = nullptr);
+    ~Modbus();
 
     // Modbus configuration enums
     enum class ModbusTcp {TCP};
@@ -81,9 +62,9 @@ public:
         Space = QSerialPort::SpaceParity
     };
     enum class StopBits {
-        One = QSerialPort::OneStop,
-        OneAndHalf = QSerialPort::OneAndHalfStop,
-        Two = QSerialPort::TwoStop
+        OneStop = QSerialPort::OneStop,
+        OneAndHalfStop = QSerialPort::OneAndHalfStop,
+        TwoStop = QSerialPort::TwoStop
     };
     enum class FlowControl {
         None     = QSerialPort::NoFlowControl,
@@ -99,36 +80,19 @@ public:
         HoldingRegisters= QModbusDataUnit::HoldingRegisters
     };
 
-    // Overloaded connection methods with default parameters
-    bool connectDevice(SerialType type,
-                       const std::string &port = "/tmp/ttyV0",
-                       BaudRate baud = BaudRate::Baud9600,
-                       DataBits bits = DataBits::Data8,
-                       Parity parity = Parity::None,
-                       StopBits stopBits = StopBits::One,
-                       FlowControl flow = FlowControl::None);
-
-    bool connectDevice(TcpType type,
-                       const std::string &ip = "127.0.0.1",
-                       int port = 8080,
-                       TcpRole role = TcpRole::Client,
-                       bool keepAlive = true,
-                       bool noDelay = true,
-                       int reconnectMs = 0);
-
-    bool connectDevice(ModbusType type,
+    bool connectDevice(
                        ModbusRtu mode,
                        const std::string &portName="tmp/ttyv0",
+                       int slaveId=1,
                        BaudRate baud = Baud9600,
                        DataBits dataBits = DataBits::Data8,
                        Parity parity = Parity::None,
-                       StopBits stopBits = StopBits::One,
-                       int slaveId=1,
+                       StopBits stopBits = StopBits::OneStop,
                        int timeoutMs = 1000,
                        int retries = 3);
 
     // TCP
-    bool connectDevice(ModbusType type,
+    bool connectDevice(
                        ModbusTcp mode,
                        const std::string &ip="127.0.0.0",
                        int tcpPort = 8080,
@@ -141,7 +105,7 @@ public:
 
     // Public methods
     void disconnectDevice();
-    void sendData(const QByteArray &data,RegisterType registerType=RegisterType::HoldingRegisters);
+    void sendData(const QByteArray &data,RegisterType registerType=RegisterType::HoldingRegisters,int startAddress=0);
 
     bool readModbusData(RegisterType registerType, int startAddress, int numberOfEntries, int slaveId = -1);
 
@@ -149,23 +113,15 @@ public:
     QByteArray buffer;
 
 signals:
-    void dataRecived(const QByteArray &data);
-
+    void dataReady(const QByteArray &data);
+    void readReady();
 private slots:
     void reciveData();
-    void checkConnection();
-    void errorConnection(QAbstractSocket::SocketError err);
 
 private:
     // Pointers to communication objects
-    QSerialPort *serial = nullptr;
-    QTcpSocket *socket = nullptr;
     QModbusClient *modbusClient = nullptr;
 
-    Type CurrentType = Type::NONE;
     int modbusSlaveId = 1;
-
-
 };
-
-#endif // PLCCOMM_H
+#endif // MODBUS_H

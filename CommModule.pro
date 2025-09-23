@@ -14,6 +14,13 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 
 
+
+
+
+
+
+
+
 TARGET = CommModule
 TEMPLATE = app
 
@@ -32,17 +39,17 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
-        main.cpp \
-        mainwindow.cpp \
-        plccomm.cpp \
-        serial.cpp \
-        tcp.cpp
+    main.cpp \
+    mainwindow.cpp \
+    modbus.cpp \
+    serial.cpp \
+    tcp.cpp
 
 HEADERS += \
-        mainwindow.h \
-        plccomm.h \
-        serial.h \
-        tcp.h
+    mainwindow.h \
+    modbus.h \
+    serial.h \
+    tcp.h
 
 
 

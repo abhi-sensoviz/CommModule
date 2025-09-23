@@ -4,77 +4,130 @@ Tcp::Tcp(QObject *parent) : QObject(parent)
 {
 
 }
-
-bool Tcp::connectDevice(QString ip,quint16 portno){
-
-    if(socket!=nullptr){
-        socket->disconnectFromHost();
-        delete socket;
-        socket=nullptr;
-    }
-    try {
-
-        socket=new QTcpSocket(this);
-        socket->connectToHost(ip,portno);
-        connect(socket,&QTcpSocket::readyRead,this,&Tcp::reciveData);
-        connect(socket, &QTcpSocket::connected, this, &Tcp::checkConnection);
-        connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(errorConnection(QAbstractSocket::SocketError)));
-
-//        connect(socket, &QTcpSocket::error, this, &Tcp::errorConnection);
-        return true;
-
-    } catch (...) {
-        cout <<"Faild connection to "<< ip.toStdString() << " "<<to_string(portno)<<endl;
-    }
-
-    return false;
-
+Tcp::~Tcp()
+{
+    disconnectDevice();
 }
 
-bool Tcp::sendData(QByteArray data){
+//overload for Tcp connection
+bool Tcp::connectDevice(
+                   const std::string &ip,
+                   int port,
+                   TcpRole role,
+                   bool keepAlive,
+                   bool noDelay,
+                   int reconnectMs) {
     try {
+        disconnectDevice(); // Disconnect any existing connection first
 
-        socket->write(data);
-        return true;
-    } catch (...) {
-        cerr<<"error in sending data"<<endl;
 
-    }
-    return false;
-}
+        socket = new QTcpSocket(this);
 
-void Tcp::reciveData(){
-    try {
-        if(socket->isOpen()){
-            data.append(socket->readAll());
-            if(data.length()>3){//change condition
-                emit dataRecived(data);
-                data.clear();
-                return;
+        socket->setSocketOption(QAbstractSocket::KeepAliveOption, keepAlive);
+        socket->setSocketOption(QAbstractSocket::LowDelayOption, noDelay);
+
+        QString qip = QString::fromStdString(ip);
+        if (role == TcpRole::Client) {
+            connect(socket, &QTcpSocket::readyRead, this, &Tcp::reciveData);
+
+            connect(socket, &QTcpSocket::readyRead, this, [this]() {
+                emit readReady();
+            });
+
+            connect(socket, &QTcpSocket::connected, this, [=]{ std::cout << "Connected to TCP host." << std::endl; });
+            connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error), this, [=](QAbstractSocket::SocketError){ if(socket) std::cerr << "Cannot connect: " << socket->errorString().toStdString() << std::endl; });
+
+
+
+            if (reconnectMs > 0) {
+                QTimer *timer = new QTimer(this);
+                timer->setObjectName("reconnectTimer"); // Name for later retrieval
+                timer->setSingleShot(true);
+                connect(socket, &QTcpSocket::disconnected, this, [=]() mutable {
+                    if (socket) {
+                         qWarning() << "Socket disconnected, retry in" << reconnectMs << "ms";
+                         timer->start(reconnectMs);
+                    } else {
+                         timer->deleteLater();
+                    }
+                });
+                connect(timer, &QTimer::timeout, this, [=]() {
+                    if (socket) {
+                        qInfo() << "Attempting to reconnect...";
+                        socket->connectToHost(qip, port);
+                    }
+                });
             }
-
+            qInfo() << "Connecting to TCP host" << qip << ":" << port;
+            socket->connectToHost(qip, port);
+            return true;
         }
+        // Could add TcpRole::Server logic here in the future
+    } catch (...) {
+        cerr << "Exception in connectDevice(TCP)" << endl;
+    }
+    return false;
+}
+
+
+//Disconnect Device for all types of connection
+void Tcp::disconnectDevice() {
+    try {
+
+            if (socket) {
+                // Stop any pending reconnect timers
+                auto *timer = findChild<QTimer*>("reconnectTimer");
+                if (timer) {
+                    timer->stop();
+                    delete timer;
+                }
+                socket->disconnect(this); // Disconnect signals
+                if (socket->state() != QAbstractSocket::UnconnectedState) {
+                    socket->disconnectFromHost();
+                    socket->waitForDisconnected(100);
+                }
+                delete socket;
+                socket = nullptr;
+                qInfo() << "TCP socket disconnected.";
+                }
 
     } catch (...) {
-        cerr<<"error in reciving Tcp data"<<endl;
-
-    }
-
-}
-void Tcp::disconnectDevice(){
-    if (socket) {
-        socket->disconnectFromHost();
-        delete socket;
-        socket=nullptr;
+        qCritical() << "Exception in disconnectDevice()";
     }
 }
-void Tcp::checkConnection(){
-    cout <<"connected to Tcp port"<<endl;
-}
-void Tcp::errorConnection(QAbstractSocket::SocketError err){
-    cout <<"Cannot connect "<<err<<endl;
+
+
+
+//SendData
+void Tcp::sendData(const QByteArray &data) {
+    try {
+
+        if (socket && socket->state() == QAbstractSocket::ConnectedState) {
+                        socket->write(data);
+                        socket->flush();
+                        qInfo() << "Sent via TCP:" << data.toHex(':');
+                    } else { qWarning() << "TCP socket not connected!"; }
+    }
+     catch (...) {
+        qCritical() << "Exception in sendData()";
+    }
 }
 
+//recive data is called whenerver data is available (redReady emmited) in conn and emits dataReady() singal
+void Tcp::reciveData() {
+    try {
+
+        if (socket && socket->bytesAvailable() > 0) {
+            QByteArray data = socket->readAll();
+            qInfo() << "Received via TCP:" << data.toHex(':');
+            buffer.append(data);
+            emit dataReady(buffer);
+            buffer.clear();
+        }
+    } catch (...) {
+        qCritical() << "Exception in reciveData()";
+    }
+}
 
 
 

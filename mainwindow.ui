@@ -34,7 +34,7 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>80</y>
+      <y>140</y>
       <width>89</width>
       <height>25</height>
      </rect>
@@ -56,9 +56,9 @@
    <widget class="QPushButton" name="btnClose">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>380</y>
-      <width>89</width>
+      <x>180</x>
+      <y>140</y>
+      <width>91</width>
       <height>25</height>
      </rect>
     </property>
@@ -79,8 +79,8 @@
    <widget class="QLineEdit" name="portname">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>50</y>
+      <x>180</x>
+      <y>49</y>
       <width>113</width>
       <height>25</height>
      </rect>
@@ -89,9 +89,9 @@
    <widget class="QComboBox" name="comboBox">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>20</y>
-      <width>86</width>
+      <x>180</x>
+      <y>10</y>
+      <width>111</width>
       <height>25</height>
      </rect>
     </property>
@@ -119,14 +119,155 @@
    <widget class="QPushButton" name="btnReq">
     <property name="geometry">
      <rect>
-      <x>140</x>
-      <y>380</y>
+      <x>191</x>
+      <y>372</y>
       <width>89</width>
       <height>25</height>
      </rect>
     </property>
     <property name="text">
-     <string>Modbus Req</string>
+     <string>Read</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="strtAddr">
+    <property name="geometry">
+     <rect>
+      <x>310</x>
+      <y>302</y>
+      <width>121</width>
+      <height>25</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>192</x>
+      <y>305</y>
+      <width>91</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Start Addr:</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="regType">
+    <property name="geometry">
+     <rect>
+      <x>309</x>
+      <y>336</y>
+      <width>121</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>Coil (r/w)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Holding Register (r/w)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Input Register (read only)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Discreet Inputs (read only)</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>190</x>
+      <y>340</y>
+      <width>111</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Register Type:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>241</x>
+      <y>260</y>
+      <width>141</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Modbus Settings</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_5">
+    <property name="geometry">
+     <rect>
+      <x>32</x>
+      <y>49</y>
+      <width>121</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Port /IP Addr       :</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_6">
+    <property name="geometry">
+     <rect>
+      <x>23</x>
+      <y>270</y>
+      <width>111</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Send Data</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="portNo">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>90</y>
+      <width>111</width>
+      <height>25</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_7">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>93</y>
+      <width>121</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>port No/slave Id  :</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_4">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>12</y>
+      <width>121</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Choose Protocol :</string>
     </property>
    </widget>
   </widget>

@@ -6,9 +6,10 @@
 #include <QSerialPortInfo>
 #include <iostream>
 #include <strings.h>
-#include "serial.h"
+//#include "plccomm.h"
+#include "modbus.h"
 #include "tcp.h"
-#include "plccomm.h"
+#include "serial.h"
 using namespace std;
 
 
@@ -25,9 +26,10 @@ public:
     ~MainWindow();
     void loadPort();
     array<string, 3> PortList = { "/dev/pts/2", "/dev/pts/3","127.0.0.0"};
+//    PlcComm *plc=nullptr;
     Serial *serial=nullptr;
-    Tcp *socket=nullptr;
-    PlcComm *plc=nullptr;
+    Tcp *tcp=nullptr;
+    Modbus *modbus=nullptr;
 
 private slots:
     void on_btnSendData_clicked();

@@ -1,111 +1,108 @@
 #include "serial.h"
 
-Serial::Serial(QObject* parent): QObject (parent){
+Serial::Serial(QObject *parent) : QObject(parent)
+{
 
 }
 
-//connect device
-bool Serial::connectDevice(QString portname){
 
-    try {
+Serial::~Serial()
+{
+    disconnectDevice();
+}
 
-        if(port!=nullptr){
-            port->close();
-            delete port;
-        }
-        port=new QSerialPort(this);
+// Note: Default parameters are only in the header file
 
-        //configuring port read config from file if needed
-        port->setPortName(portname);
-        port->setBaudRate(QSerialPort::Baud9600);
-        port->setDataBits(QSerialPort::Data8);
-        port->setParity(QSerialPort::NoParity);
-        port->setStopBits(QSerialPort::OneStop);
+//overload for serial connection
+bool Serial::connectDevice(
+                            const std::string &port,
+                            BaudRate baud,
+                            DataBits bits,
+                            Parity parity,
+                            StopBits stopBits,
+                            FlowControl flow) {
+    try{
+        disconnectDevice(); // Disconnect any existing connection first
 
-        //opean port
-        if(port->open(QIODevice::ReadWrite)){
-            cout<<"Port opened "<<portname.toStdString()<<endl;
-            connect(port,&QSerialPort::readyRead,this,&Serial::reciveData);
+        serial = new QSerialPort(this);
+
+        serial->setPortName(QString::fromStdString(port));
+        serial->setBaudRate(baud); // No cast needed for unscoped enum
+        serial->setDataBits(static_cast<QSerialPort::DataBits>(bits));
+        serial->setParity(static_cast<QSerialPort::Parity>(parity));
+        serial->setStopBits(static_cast<QSerialPort::StopBits>(stopBits));
+        serial->setFlowControl(static_cast<QSerialPort::FlowControl>(flow));
+
+        if (serial->open(QIODevice::ReadWrite)) {
+            cout << "Port opened " << port << endl;
+            connect(serial, &QSerialPort::readyRead, this, &Serial::reciveData);
+            connect(serial, &QSerialPort::readyRead, this, [this]() {
+                emit readReady();
+            });
             return true;
-        }else{
-            cerr<<"error in opening port "<<portname.toStdString()<<endl;
+        } else {
+            cerr << "error in opening serial " << port << " : " << serial->errorString().toStdString() << endl;
+            disconnectDevice(); // Clean up on failure
         }
-    } catch (...) {
-        cerr<<"error in opening port "<<portname.toStdString()<<endl;
-        return false;
-
+    } catch(...) {
+        cerr << "Exception in connectDevice(Serial)" << endl;
     }
     return false;
-
 }
 
 
-//send data
-bool Serial::sendData(QByteArray data){
-
-    if(port==nullptr){
-        cerr <<"cant send data"<<endl;
-        return false;
-    }
-    if(port->isWritable()){
-        if(port->write(data)){
-            cout <<"write sucessfull"<<endl;
-            return true;
-        }else{
-            cerr<<"write failed"<<endl;
-            return false;
-        }
-    }else{
-        cerr<<"port not opaned"<<endl;
-        return false;
-    }
-
-}
 
 
-//recive data
-void Serial::reciveData(){  //modify to include prefix and suffix
+//Disconnect Device for all types of connection
+void Serial::disconnectDevice() {
     try {
-    if(port->isOpen()){
-        data.append(port->readAll());
-//        /emit dataRecived(data); //comment out
-        //check if complete data is available and then emit
-        //clear after data is recived completly
-        //dummy condition
-        if(data.length()>3){
-            emit(dataRecived(data));
-            data.clear();
-            return;
-        }
-    }
+
+            if (serial) {
+                if (serial->isOpen()) {
+                    serial->close();
+                    cout << "Serial port disconnected."<<endl;
+                }
+                delete serial;
+                serial = nullptr;
+            }
+
     } catch (...) {
-        cerr<<"error in reading data"<<endl;
+        cerr << "Exception in disconnectDevice()"<<endl;
     }
+}
 
+//SendData
+void Serial::sendData(const QByteArray &data) {
+    try {
+        if (serial && serial->isOpen()) {
+            //crc
+            serial->write(data);
+            serial->flush();
+            cout << "Sent via Serial:" << data.toHex(':').toStdString() <<endl;
+        } else { cout<<"Serial port not open!"; }
+
+    } catch (...) {
+        cout<< "Exception in sendData()";
+    }
 }
 
 
-//disconnect port
-void Serial::disconnectDevice(){
+//recive data is called whenerver data is available (redReady emmited) in conn and emits dataReady() singal
+void Serial::reciveData() {
+    try {
 
-    if(port && port->isOpen()){
-        port->close();
-        delete port;
-        port=nullptr;
-        cout <<"port closed"<<endl;
-    }else{
-        cerr <<"error in closing port"<<endl;
+        if (serial && serial->bytesAvailable() > 0) {
+            QByteArray data = serial->readAll();
+            cout<< "Received via Serial:" << data.toHex(':').toStdString();
+            buffer.append(data);
+            emit dataReady(buffer);
+            buffer.clear();
+        }
+
+    } catch (...) {
+        cerr << "Exception in reciveData()"<<endl;
     }
-    return;
 }
-
-
-
-
-
-
-
-
 
 
 
