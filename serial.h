@@ -64,18 +64,18 @@ public:
     void disconnectDevice();
     void sendData(const QByteArray &data);
 
-
     // Public members
     QByteArray buffer;
 
 signals:
     void dataReady(const QByteArray &data);
     void readReady();
+    void errorOccurredSignal(const QString &msg);
 
 private slots:
     void reciveData();
 
-private:
+public:
     // Pointers to communication objects
     QSerialPort *serial = nullptr;
 };

@@ -44,12 +44,20 @@ bool Modbus::connectDevice(
             modbusClient->setTimeout(timeoutMs);
             modbusClient->setNumberOfRetries(retries);
 
+            //can be removed
             if (!modbusClient->connectDevice()) {
                 qCritical() << "Failed to connect Modbus:" << modbusClient->errorString();
                 disconnectDevice(); // Clean up
                 return false;
             }
             qInfo()<<"Modbus RTU " << QString::fromStdString(port) <<" Connected Sucessfully";
+            connect(modbusClient, &QModbusClient::errorOccurred, this,
+                    [=](QModbusDevice::Error error){
+                        if (error != QModbusDevice::NoError) {
+                            emit errorOccurredSignal(modbusClient->errorString());
+                        }
+                    });
+
             return true;
 
 

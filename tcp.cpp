@@ -37,6 +37,14 @@ bool Tcp::connectDevice(
             connect(socket, &QTcpSocket::connected, this, [=]{ std::cout << "Connected to TCP host." << std::endl; });
             connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error), this, [=](QAbstractSocket::SocketError){ if(socket) std::cerr << "Cannot connect: " << socket->errorString().toStdString() << std::endl; });
 
+            //emit error signal
+            connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QTcpSocket::error),
+                    this,
+                    [=](QAbstractSocket::SocketError error){
+                        if (error != QAbstractSocket::UnknownSocketError) {
+                            emit errorOccurredSignal(socket->errorString());
+                        }
+                    });
 
 
             if (reconnectMs > 0) {

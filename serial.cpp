@@ -39,6 +39,13 @@ bool Serial::connectDevice(
             connect(serial, &QSerialPort::readyRead, this, [this]() {
                 emit readReady();
             });
+            connect(serial, &QSerialPort::errorOccurred, this,
+                    [=](QSerialPort::SerialPortError error){
+                        if (error != QSerialPort::NoError) {
+                            emit errorOccurredSignal(serial->errorString());
+                        }
+                    });
+
             return true;
         } else {
             cerr << "error in opening serial " << port << " : " << serial->errorString().toStdString() << endl;

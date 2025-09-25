@@ -39,6 +39,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
+    commmanager.cpp \
     main.cpp \
     mainwindow.cpp \
     modbus.cpp \
@@ -46,6 +47,7 @@ SOURCES += \
     tcp.cpp
 
 HEADERS += \
+    commmanager.h \
     mainwindow.h \
     modbus.h \
     serial.h \

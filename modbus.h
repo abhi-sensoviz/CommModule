@@ -115,6 +115,7 @@ public:
 signals:
     void dataReady(const QByteArray &data);
     void readReady();
+    void errorOccurredSignal(const QString &msg);
 private slots:
     void reciveData();
 

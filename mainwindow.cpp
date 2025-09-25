@@ -43,7 +43,7 @@ void MainWindow::on_btnSendData_clicked(){
 
 
 void MainWindow::on_dataRecived(QByteArray data){
-    ui->textBox->append(">> "+QString(data));
+    ui->textBox->append(">> "+QString(data)+"|");
 
 }
 
